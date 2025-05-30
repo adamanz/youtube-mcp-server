@@ -1,0 +1,22 @@
+[project]
+name = "youtube-mcp-server"
+version = "1.0.0"
+description = "MCP server for uploading videos to YouTube"
+authors = [
+    {name = "YouTube MCP Developer"},
+]
+dependencies = [
+    "mcp[cli]",
+    "httpx",
+    "google-auth-httplib2",
+    "google-auth-oauthlib",
+    "google-api-python-client",
+]
+requires-python = ">=3.10"
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["youtube_uploader"]

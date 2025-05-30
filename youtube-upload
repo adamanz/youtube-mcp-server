@@ -1,0 +1,14 @@
+#!/bin/bash
+# YouTube Upload Wrapper Script
+
+# Check if youtube_cli.py exists
+if [ ! -f "youtube_cli.py" ]; then
+    echo "Error: youtube_cli.py not found in current directory"
+    exit 1
+fi
+
+# Make the CLI script executable
+chmod +x youtube_cli.py
+
+# Run the YouTube CLI with all arguments
+python3 youtube_cli.py "$@"
