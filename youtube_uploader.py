@@ -28,9 +28,10 @@ SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
 API_SERVICE_NAME = "youtube"
 API_VERSION = "v3"
 
-# OAuth2 token storage
-TOKEN_FILE = "token.json"
-CREDENTIALS_FILE = "credentials.json"
+# OAuth2 token storage - use absolute paths to ensure files are found
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+TOKEN_FILE = os.path.join(SCRIPT_DIR, "token.json")
+CREDENTIALS_FILE = os.path.join(SCRIPT_DIR, "credentials.json")
 
 def get_authenticated_service():
     """Get authenticated YouTube service"""
