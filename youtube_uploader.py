@@ -10,7 +10,7 @@ import mimetypes
 from typing import Any, Optional
 from pathlib import Path
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server import FastMCP
 import httpx
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
