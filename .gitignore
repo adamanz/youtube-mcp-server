@@ -3,7 +3,9 @@ venv/
 env/
 .venv/
 
-# OAuth2 credentials and tokens
+# Environment variables and credentials
+.env
+.env.*
 credentials.json
 token.json
 
