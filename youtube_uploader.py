@@ -4,6 +4,7 @@ YouTube MCP Server - Upload videos to YouTube via MCP
 """
 
 import os
+import sys
 import json
 import asyncio
 import mimetypes
@@ -247,6 +248,127 @@ async def list_video_categories(region_code: str = "US") -> str:
         
     except Exception as e:
         return f"Error listing categories: {str(e)}"
+
+@mcp.tool()
+async def authorize_youtube_access() -> str:
+    """Initiate OAuth 2.0 authorization flow for YouTube access.
+    
+    This tool starts the OAuth 2.0 authorization process to allow users to
+    authenticate with their Google/YouTube account. The user will be directed
+    to Google's authorization server in their browser.
+    
+    OAuth 2.0 Flow:
+    1. User initiates authorization (this tool)
+    2. Browser opens to Google's authorization server
+    3. User signs in to their Google/YouTube account
+    4. User grants permission for the app to access their YouTube channel
+    5. Access token is stored locally for future uploads
+    
+    Returns:
+        Status of the authorization attempt
+    """
+    try:
+        if not os.path.exists(CREDENTIALS_FILE):
+            return """❌ OAuth2 client credentials not found.
+            
+Please set up OAuth2 credentials first using 'setup_youtube_auth' or ensure
+credentials.json exists in the working directory.
+
+To get OAuth2 credentials:
+1. Go to Google Cloud Console (https://console.cloud.google.com/)
+2. Enable YouTube Data API v3
+3. Create OAuth2 credentials (Desktop application type)
+4. Use setup_youtube_auth tool with your credentials"""
+
+        # Check if user is already authenticated
+        if os.path.exists(TOKEN_FILE):
+            try:
+                creds = Credentials.from_authorized_user_file(TOKEN_FILE, SCOPES)
+                if creds and creds.valid:
+                    # Test the credentials
+                    youtube = build(API_SERVICE_NAME, API_VERSION, credentials=creds)
+                    request = youtube.channels().list(part="snippet", mine=True)
+                    response = request.execute()
+                    
+                    if response.get("items"):
+                        channel = response["items"][0]
+                        return f"""✅ Already authenticated!
+                        
+YouTube Channel: {channel['snippet']['title']}
+Access token is valid and ready for uploads.
+
+You can now upload videos using the 'upload_video' tool."""
+                    
+                except Exception:
+                    # Token exists but is invalid, will re-authenticate below
+                    pass
+
+        # Start OAuth flow
+        flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_FILE, SCOPES)
+        
+        # Use run_local_server with a specific port for better reliability
+        print("🔐 Starting OAuth 2.0 authorization flow...", file=sys.stderr)
+        print("🌐 Opening browser for Google authentication...", file=sys.stderr)
+        
+        creds = flow.run_local_server(
+            port=8080,
+            prompt='consent',
+            authorization_prompt_message="Opening browser for YouTube authorization...",
+            success_message="Authorization successful! You can close this tab."
+        )
+        
+        # Save credentials for future use
+        with open(TOKEN_FILE, 'w') as token:
+            token.write(creds.to_json())
+        
+        # Verify authentication worked by getting channel info
+        youtube = build(API_SERVICE_NAME, API_VERSION, credentials=creds)
+        request = youtube.channels().list(part="snippet,statistics", mine=True)
+        response = request.execute()
+        
+        if response.get("items"):
+            channel = response["items"][0]
+            return f"""✅ Authorization successful!
+
+YouTube Channel: {channel['snippet']['title']}
+Subscribers: {channel['statistics'].get('subscriberCount', 'Hidden')}
+Videos: {channel['statistics'].get('videoCount', 'Unknown')}
+
+🎬 You can now upload videos using the 'upload_video' tool.
+🔑 Your access tokens have been saved for future use."""
+        else:
+            return """✅ Authorization completed but no YouTube channel found.
+            
+Make sure you have a YouTube channel associated with your Google account."""
+            
+    except Exception as e:
+        error_msg = str(e)
+        if "redirect_uri_mismatch" in error_msg:
+            return """❌ OAuth Configuration Error: redirect_uri_mismatch
+
+This means the redirect URI in your OAuth2 credentials doesn't match what the app is using.
+
+To fix this:
+1. Go to Google Cloud Console > APIs & Services > Credentials
+2. Edit your OAuth2 client
+3. Add 'http://localhost:8080' to Authorized redirect URIs
+4. Try authorization again"""
+        
+        elif "access_denied" in error_msg:
+            return """❌ Authorization denied by user.
+
+The user declined to grant permission. To upload videos, you need to:
+1. Run this tool again
+2. Grant permission when prompted in the browser"""
+        
+        else:
+            return f"""❌ Authorization failed: {error_msg}
+
+Common solutions:
+1. Ensure YouTube Data API v3 is enabled in Google Cloud Console
+2. Check that OAuth2 credentials are properly configured
+3. Make sure redirect URI includes 'http://localhost:8080'
+4. Try running the authorization again"""
 
 @mcp.tool()
 async def setup_youtube_auth(client_id: str, client_secret: str, project_id: str) -> str:
