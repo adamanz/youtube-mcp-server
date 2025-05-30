@@ -307,12 +307,14 @@ You can now upload videos using the 'upload_video' tool."""
         # Start OAuth flow
         flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_FILE, SCOPES)
         
-        # Use run_local_server with a specific port for better reliability
+        # Use run_local_server with explicit redirect URI
         print("🔐 Starting OAuth 2.0 authorization flow...", file=sys.stderr)
         print("🌐 Opening browser for Google authentication...", file=sys.stderr)
+        print(f"📍 Using redirect URI: http://localhost:8080/", file=sys.stderr)
         
         creds = flow.run_local_server(
             port=8080,
+            host='localhost',
             prompt='consent',
             authorization_prompt_message="Opening browser for YouTube authorization...",
             success_message="Authorization successful! You can close this tab."
