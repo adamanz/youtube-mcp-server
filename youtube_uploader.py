@@ -299,9 +299,9 @@ Access token is valid and ready for uploads.
 
 You can now upload videos using the 'upload_video' tool."""
                     
-                except Exception:
-                    # Token exists but is invalid, will re-authenticate below
-                    pass
+            except Exception:
+                # Token exists but is invalid, will re-authenticate below
+                pass
 
         # Start OAuth flow
         flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_FILE, SCOPES)
